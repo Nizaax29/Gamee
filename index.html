@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Naruto Shinobi HTML5</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; image-rendering: pixelated; background: linear-gradient(#1a2a6c, #b21f1f, #fdbb2d); }
+        
+        /* UI HUD */
+        #hud { position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none; }
+        .bar-bg { width: 180px; height: 12px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 10px; margin-bottom: 6px; overflow: hidden; }
+        #hp-bar { width: 100%; height: 100%; background: #ff4757; transition: 0.3s; }
+        #cp-bar { width: 100%; height: 100%; background: #1e90ff; transition: 0.2s; }
+
+        /* Mobile Controls */
+        #controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 20px; }
+        .btn { 
+            width: 80px; height: 80px; background: rgba(255,255,255,0.15); border: 2px solid #fff; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; backdrop-filter: blur(5px); touch-action: manipulation;
+        }
+        .btn:active { background: rgba(255,255,255,0.4); transform: scale(0.9); }
+        
+        #fs-trigger { position: absolute; top: 20px; right: 20px; padding: 10px; background: rgba(255,255,255,0.2); color: #fff; border: 1px solid #fff; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="hud">
+    <div class="bar-bg"><div id="hp-bar"></div></div>
+    <div class="bar-bg"><div id="cp-bar"></div></div>
+</div>
+
+<button id="fs-trigger">FULLSCREEN</button>
+
+<canvas id="game"></canvas>
+
+<div id="controls">
+    <div class="btn-group">
+        <div class="btn" id="left">←</div>
+        <div class="btn" id="right">→</div>
+    </div>
+    <div class="btn-group">
+        <div class="btn" id="atk" style="border-color: #ffa502;">ATK</div>
+        <div class="btn" id="jump" style="border-color: #2ed573;">JUMP</div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+// CHARGEMENT DU SPRITE VIA GITHUB
+const sprite = new Image();
+sprite.crossOrigin = "anonymous"; 
+sprite.src = 'https://raw.githubusercontent.com/Nizaax29/Gamee/refs/heads/main/12.png';
+
+// Configuration
+const engine = {
+    gravity: 0.8,
+    groundY: 60,
+    tileSize: 16,
+    zoom: 6, // Pour que le 16x16 soit bien grand
+    worldWidth: 3000
+};
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+
+// Fullscreen
+document.getElementById('fs-trigger').onclick = () => {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+};
+
+const player = {
+    x: 100, y: 0,
+    w: engine.tileSize * engine.zoom,
+    h: engine.tileSize * engine.zoom,
+    velX: 0, velY: 0,
+    speed: 7, jumpPower: -18,
+    grounded: false,
+    dir: 1, // 1 = droite, -1 = gauche
+    frameX: 0, frameY: 0,
+    animTick: 0,
+    state: 'idle'
+};
+
+const keys = { left: false, right: false, up: false };
+
+// Touch Events
+const setupBtn = (id, key) => {
+    const el = document.getElementById(id);
+    el.ontouchstart = (e) => { e.preventDefault(); keys[key] = true; };
+    el.ontouchend = () => keys[key] = false;
+};
+setupBtn('left', 'left'); setupBtn('right', 'right'); setupBtn('jump', 'up');
+
+function update() {
+    // Déplacement
+    if (keys.left) { player.velX = -player.speed; player.dir = -1; player.state = 'run'; }
+    else if (keys.right) { player.velX = player.speed; player.dir = 1; player.state = 'run'; }
+    else { player.velX *= 0.8; player.state = 'idle'; }
+
+    if (keys.up && player.grounded) {
+        player.velY = player.jumpPower;
+        player.grounded = false;
+    }
+
+    player.velY += engine.gravity;
+    player.x += player.velX;
+    player.y += player.velY;
+
+    // Collision Sol
+    const limit = canvas.height - engine.groundY - player.h;
+    if (player.y > limit) {
+        player.y = limit;
+        player.velY = 0;
+        player.grounded = true;
+    }
+
+    // Animation (vitesse d'animation)
+    player.animTick++;
+    if (player.animTick % 10 === 0) {
+        player.frameX = (player.frameX + 1) % 4; // Boucle sur 4 frames
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Camera follow (centré sur le joueur)
+    let camX = player.x - canvas.width / 2;
+    camX = Math.max(0, Math.min(camX, engine.worldWidth - canvas.width));
+
+    // Dessin du Sol
+    ctx.fillStyle = "#333";
+    ctx.fillRect(0 - camX, canvas.height - engine.groundY, engine.worldWidth, engine.groundY);
+
+    // Dessin Naruto
+    if (sprite.complete) {
+        ctx.save();
+        ctx.translate(player.x - camX, player.y);
+        
+        // On retourne l'image si on va à gauche
+        if (player.dir === -1) {
+            ctx.scale(-1, 1);
+            ctx.translate(-player.w, 0);
+        }
+
+        ctx.drawImage(
+            sprite,
+            player.frameX * engine.tileSize, 0, // Source X, Y (on prend la 1ère ligne)
+            engine.tileSize, engine.tileSize,   // Taille de la coupe (16x16)
+            0, 0,                               // Position écran
+            player.w, player.h                  // Taille écran (zoomée)
+        );
+        ctx.restore();
+    }
+
+    requestAnimationFrame(() => {
+        update();
+        draw();
+    });
+}
+
+// Lancer le jeu
+draw();
+</script>
+</body>
+</html>
