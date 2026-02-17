@@ -3,123 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Naruto Shinobi HTML5</title>
+    <title>Naruto Shinobi: Mobile Edition</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        canvas { display: block; image-rendering: pixelated; background: linear-gradient(#1a2a6c, #b21f1f, #fdbb2d); }
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Roboto:wght@700&display=swap');
         
-        /* UI HUD */
-        #hud { position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none; }
-        .bar-bg { width: 180px; height: 12px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 10px; margin-bottom: 6px; overflow: hidden; }
-        #hp-bar { width: 100%; height: 100%; background: #ff4757; transition: 0.3s; }
-        #cp-bar { width: 100%; height: 100%; background: #1e90ff; transition: 0.2s; }
-
-        /* Mobile Controls */
-        #controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; }
-        .btn-group { display: flex; gap: 20px; }
-        .btn { 
-            width: 80px; height: 80px; background: rgba(255,255,255,0.15); border: 2px solid #fff; 
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: bold; backdrop-filter: blur(5px); touch-action: manipulation;
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Roboto', sans-serif; }
+        
+        /* --- ECRAN D'ACCUEIL --- */
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            background-size: 300% 300%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 100; color: white; text-align: center;
+            animation: gradientBG 10s ease infinite;
         }
-        .btn:active { background: rgba(255,255,255,0.4); transform: scale(0.9); }
+        @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
         
-        #fs-trigger { position: absolute; top: 20px; right: 20px; padding: 10px; background: rgba(255,255,255,0.2); color: #fff; border: 1px solid #fff; border-radius: 5px; cursor: pointer; }
+        #start-screen h1 { font-family: 'Bangers', cursive; font-size: 80px; margin-bottom: 10px; text-shadow: 4px 4px 0px #000, 0 0 20px #ff9f43; letter-spacing: 5px; }
+        #start-screen p { font-size: 18px; margin-bottom: 40px; text-shadow: 2px 2px 0px #000; }
+        
+        #play-btn {
+            background: #ff9f43; color: #000; font-family: 'Bangers', cursive; font-size: 35px;
+            padding: 15px 60px; border: 4px solid #fff; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5); transition: 0.2s; letter-spacing: 2px;
+        }
+        #play-btn:active { transform: scale(0.9); box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
+
+        /* --- INTERFACE DU JEU (Cachée au début) --- */
+        #game-ui { display: none; position: relative; width: 100vw; height: 100vh; }
+        canvas { display: block; image-rendering: pixelated; }
+
+        /* HUD */
+        #hud { position: absolute; top: 20px; left: 20px; z-index: 10; pointer-events: none; }
+        .bar-bg { width: 200px; height: 15px; background: rgba(0,0,0,0.7); border: 2px solid #fff; border-radius: 8px; margin-bottom: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        #hp-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #ff4757, #ff6b81); }
+        #cp-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #1e90ff, #70a1ff); }
+
+        /* Contrôles tactiles */
+        #controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 40px; pointer-events: none; }
+        .btn-group { display: flex; gap: 20px; pointer-events: auto; }
+        .ctrl-btn { 
+            width: 80px; height: 80px; background: rgba(255,255,255,0.1); border: 3px solid rgba(255,255,255,0.6); 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; font-size: 20px; backdrop-filter: blur(4px); box-shadow: inset 0 0 15px rgba(255,255,255,0.2);
+        }
+        .ctrl-btn:active { background: rgba(255,165,0,0.5); transform: scale(0.9); border-color: #fff; }
     </style>
 </head>
 <body>
 
-<div id="hud">
-    <div class="bar-bg"><div id="hp-bar"></div></div>
-    <div class="bar-bg"><div id="cp-bar"></div></div>
+<audio id="bg-music" loop>
+    <source src="https://cdn.pixabay.com/download/audio/2022/05/16/audio_03d2b27d42.mp3?filename=japanese-lofi-111451.mp3" type="audio/mpeg">
+</audio>
+
+<div id="start-screen">
+    <h1>SHINOBI<br>STRIKER 2D</h1>
+    <p>Version Mobile Ultime</p>
+    <button id="play-btn">JOUER</button>
 </div>
 
-<button id="fs-trigger">FULLSCREEN</button>
-
-<canvas id="game"></canvas>
-
-<div id="controls">
-    <div class="btn-group">
-        <div class="btn" id="left">←</div>
-        <div class="btn" id="right">→</div>
+<div id="game-ui">
+    <div id="hud">
+        <div class="bar-bg"><div id="hp-bar"></div></div>
+        <div class="bar-bg"><div id="cp-bar"></div></div>
     </div>
-    <div class="btn-group">
-        <div class="btn" id="atk" style="border-color: #ffa502;">ATK</div>
-        <div class="btn" id="jump" style="border-color: #2ed573;">JUMP</div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="controls">
+        <div class="btn-group">
+            <div class="ctrl-btn" id="left">←</div>
+            <div class="ctrl-btn" id="right">→</div>
+        </div>
+        <div class="btn-group">
+            <div class="ctrl-btn" id="atk" style="border-color: #ff4757; color: #ff4757;">⚔️</div>
+            <div class="ctrl-btn" id="jump" style="border-color: #1e90ff; color: #1e90ff;">⬆️</div>
+        </div>
     </div>
 </div>
 
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+/** * GESTION DU MENU & PLEIN ECRAN
+ */
+const startScreen = document.getElementById('start-screen');
+const gameUI = document.getElementById('game-ui');
+const bgMusic = document.getElementById('bg-music');
 
-// CHARGEMENT DU SPRITE VIA GITHUB
-const sprite = new Image();
-sprite.crossOrigin = "anonymous"; 
-sprite.src = 'https://raw.githubusercontent.com/Nizaax29/Gamee/refs/heads/main/12.png';
-
-// Configuration
-const engine = {
-    gravity: 0.8,
-    groundY: 60,
-    tileSize: 16,
-    zoom: 6, // Pour que le 16x16 soit bien grand
-    worldWidth: 3000
-};
-
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+document.getElementById('play-btn').addEventListener('click', () => {
+    // Cache le menu, affiche le jeu
+    startScreen.style.display = 'none';
+    gameUI.style.display = 'block';
+    
+    // Lance la musique (volume doux)
+    bgMusic.volume = 0.4;
+    bgMusic.play().catch(e => console.log("Musique bloquée par le navigateur :", e));
+    
+    // Active le plein écran si dispo
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+    }
+    
+    initGame();
 });
 
-// Fullscreen
-document.getElementById('fs-trigger').onclick = () => {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-    else document.exitFullscreen();
-};
+/** * MOTEUR DU JEU 
+ */
+let canvas, ctx, player, keys;
+const engine = { gravity: 0.8, groundY: 80, worldWidth: 3000 };
+let camX = 0;
 
-const player = {
-    x: 100, y: 0,
-    w: engine.tileSize * engine.zoom,
-    h: engine.tileSize * engine.zoom,
-    velX: 0, velY: 0,
-    speed: 7, jumpPower: -18,
-    grounded: false,
-    dir: 1, // 1 = droite, -1 = gauche
-    frameX: 0, frameY: 0,
-    animTick: 0,
-    state: 'idle'
-};
+// Chargement du Sprite corrigé (Taille entière)
+const sprite = new Image();
+sprite.crossOrigin = "anonymous";
+sprite.src = 'https://raw.githubusercontent.com/Nizaax29/Gamee/refs/heads/main/12.png';
 
-const keys = { left: false, right: false, up: false };
+function initGame() {
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d');
+    
+    // Pixel art net
+    ctx.imageSmoothingEnabled = false;
 
-// Touch Events
-const setupBtn = (id, key) => {
-    const el = document.getElementById(id);
-    el.ontouchstart = (e) => { e.preventDefault(); keys[key] = true; };
-    el.ontouchend = () => keys[key] = false;
-};
-setupBtn('left', 'left'); setupBtn('right', 'right'); setupBtn('jump', 'up');
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    player = {
+        x: 100, y: 0,
+        w: 70, h: 70, // Taille fixe à l'écran
+        velX: 0, velY: 0, speed: 7, jumpPower: -16,
+        grounded: false, dir: 1, state: 'idle'
+    };
+
+    keys = { left: false, right: false, up: false };
+
+    // Setup tactiles
+    const bindBtn = (id, key) => {
+        const btn = document.getElementById(id);
+        btn.ontouchstart = (e) => { e.preventDefault(); keys[key] = true; };
+        btn.ontouchend = (e) => { e.preventDefault(); keys[key] = false; };
+        // Pour tester sur PC aussi
+        btn.onmousedown = () => keys[key] = true;
+        btn.onmouseup = () => keys[key] = false;
+    };
+    bindBtn('left', 'left'); bindBtn('right', 'right'); bindBtn('jump', 'up');
+
+    gameLoop();
+}
 
 function update() {
-    // Déplacement
+    // Mouvement
     if (keys.left) { player.velX = -player.speed; player.dir = -1; player.state = 'run'; }
     else if (keys.right) { player.velX = player.speed; player.dir = 1; player.state = 'run'; }
     else { player.velX *= 0.8; player.state = 'idle'; }
 
+    // Saut
     if (keys.up && player.grounded) {
         player.velY = player.jumpPower;
         player.grounded = false;
     }
 
+    // Physique
     player.velY += engine.gravity;
     player.x += player.velX;
     player.y += player.velY;
 
-    // Collision Sol
+    // Sol
     const limit = canvas.height - engine.groundY - player.h;
     if (player.y > limit) {
         player.y = limit;
@@ -127,53 +181,83 @@ function update() {
         player.grounded = true;
     }
 
-    // Animation (vitesse d'animation)
-    player.animTick++;
-    if (player.animTick % 10 === 0) {
-        player.frameX = (player.frameX + 1) % 4; // Boucle sur 4 frames
+    // Limites de la carte
+    if (player.x < 0) player.x = 0;
+    if (player.x > engine.worldWidth - player.w) player.x = engine.worldWidth - player.w;
+}
+
+function drawBackground() {
+    // Ciel avec dégradé
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, "#4a69bd"); // Bleu ciel
+    gradient.addColorStop(1, "#82ccdd"); // Bleu clair
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Décor : Arbres/Montagnes lointaines (Effet Parallaxe)
+    ctx.fillStyle = "#0a3d62";
+    for(let i = 0; i < engine.worldWidth; i += 300) {
+        ctx.beginPath();
+        ctx.arc(i - (camX * 0.2), canvas.height - engine.groundY, 150, Math.PI, 0);
+        ctx.fill();
     }
+
+    // Sol (Herbe de Konoha)
+    ctx.fillStyle = "#78e08f";
+    ctx.fillRect(0 - camX, canvas.height - engine.groundY, engine.worldWidth, 20);
+    // Terre sous l'herbe
+    ctx.fillStyle = "#b8e994";
+    ctx.fillRect(0 - camX, canvas.height - engine.groundY + 20, engine.worldWidth, engine.groundY - 20);
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Camera follow (centré sur le joueur)
-    let camX = player.x - canvas.width / 2;
+    // Suivi Caméra
+    let targetCam = player.x - canvas.width / 2 + player.w / 2;
+    camX += (targetCam - camX) * 0.1; // Glissement fluide
     camX = Math.max(0, Math.min(camX, engine.worldWidth - canvas.width));
 
-    // Dessin du Sol
-    ctx.fillStyle = "#333";
-    ctx.fillRect(0 - camX, canvas.height - engine.groundY, engine.worldWidth, engine.groundY);
+    drawBackground();
 
-    // Dessin Naruto
-    if (sprite.complete) {
+    // Rendu du Joueur
+    if (sprite.complete && sprite.width > 0) {
         ctx.save();
-        ctx.translate(player.x - camX, player.y);
         
-        // On retourne l'image si on va à gauche
+        // Effet de "sautillement" quand il court pour faire vivre l'image statique
+        let bobbing = 0;
+        if (player.state === 'run') {
+            bobbing = Math.sin(Date.now() / 60) * 4; 
+        }
+
+        ctx.translate(player.x - camX, player.y + bobbing);
+        
+        // Retournement gauche/droite
         if (player.dir === -1) {
             ctx.scale(-1, 1);
             ctx.translate(-player.w, 0);
         }
 
+        // On dessine l'image ENTIÈRE pour éviter le bug du "1/4"
         ctx.drawImage(
             sprite,
-            player.frameX * engine.tileSize, 0, // Source X, Y (on prend la 1ère ligne)
-            engine.tileSize, engine.tileSize,   // Taille de la coupe (16x16)
-            0, 0,                               // Position écran
-            player.w, player.h                  // Taille écran (zoomée)
+            0, 0, sprite.width, sprite.height, // Source : Toute l'image
+            0, 0, player.w, player.h           // Destination : Taille sur l'écran
         );
+        
         ctx.restore();
+    } else {
+        // Chargement en cours
+        ctx.fillStyle = "white";
+        ctx.fillText("Chargement du Ninja...", player.x - camX, player.y);
     }
-
-    requestAnimationFrame(() => {
-        update();
-        draw();
-    });
 }
 
-// Lancer le jeu
-draw();
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
 </script>
 </body>
 </html>
